@@ -1,3 +1,4 @@
+
 # 🤖 Inmosoft RPA Automation — Legacy Accounting & PDF Billing Engine
 
 ![Python](https://img.shields.io/badge/Language-Python%203.x-blue?style=for-the-badge&logo=python)
@@ -31,6 +32,25 @@ El desarrollo resuelve de forma nativa cuellos de botella de la API de Windows, 
 * **Problema:** Inmosoft exporta reportes PDF con nombres estáticos por propietario. Cuando múltiples unidades pertenecen al mismo titular, el archivo local se sobreescribe.
 * **Solución:** Intercepción de la ventana *"Guardar como"* de Windows (`win32gui`) e inyección directa de la ruta absoluta con nombrado único en tiempo real (`C:\...\CUPONES_DESCARGADOS\Cupon_CODIGO.pdf`).
 
+> [!WARNING]
+> **⚠️ ESTADO DEL PROYECTO & DISCLAIMER DE USO EN PRODUCCIÓN**
+> 
+> Este script fue desarrollado como una **Prueba de Concepto (PoC) / Automatización Ad-Hoc** para operar sobre una interfaz GUI legacy no pensada para automatización. Debido a la naturaleza no determinista de la simulación de eventos de mouse/teclado y la inestabilidad propia del software base, el repositorio se comparte exclusivamente con fines educativos y de portafolio. **No se recomienda su ejecución desatendida en entornos de producción.**
+
+---
+
+### 🐛 Known Issues & Deuda Técnica (Bugs Conocidos)
+
+Actualmente existen comportamientos anómalos detectados en el pipeline que se encuentran bajo investigación para futuras versiones:
+
+1. **Colisión y Sobreescritura Sporádica de Cupones PDF:**
+   * **Comportamiento:** A pesar del renombrado dinámico por ruta absoluta en la ventana *"Guardar como"*, si la API de Windows demora en renderizar el cuadro de diálogo por sobrecarga de I/O, el bot envía la secuencia de guardado antes de limpiar el campo de texto, provocando la sobreescritura con el nombre estático por defecto del ERP.
+2. **Crashes Aleatorios de Inmosoft (Memory Leaks / Fault Tolerant):**
+   * **Comportamiento:** El motor interno de Inmosoft (32 bits) presenta fugas de memoria al procesar ciclos largos de lectura/escritura de contratos. Tras 20-30 iteraciones seguidas, la aplicación lanza una excepción no controlada (`Access Violation / Stopped Working`) cerrándose de forma imprevista.
+3. **Salteo Inexplorado de Unidades Funcionales (Omission Anomaly):**
+   * **Comportamiento:** Durante la lectura e inyección de `liquidacion.xlsx`, en ejecuciones extensas el flujo saltea ocasionalmente 1 o 2 unidades consecutivas sin arrojar error sintáctico en consola. Se sospecha una desincronización de tiempos (*race condition*) entre el foco del cuadro de búsqueda y la respuesta de la base de datos local.
+
+> 🛠️ **Contribuciones / Workarounds:** Si tenés sugerencias para mitigar la condición de carrera vía `win32api` o mediante *hooks* directos a la ventana de Windows, los Pull Requests son más que bienvenidos.
 ---
 
 ## 🏗️ Arquitectura de Scripts
@@ -46,3 +66,141 @@ inmosoft-rpa-automation/
 ├── 📂 CUPONES_DESCARGADOS/         # Directorio de salida de reportes PDF generados
 ├── 📊 liquidacion.xlsx             # Planilla de origen de datos (Cód. Inmueble, Concepto, Monto)
 └── ⚙️ coordenadas_monitor_teo.json # Mapeo de coordenadas en JSON para independencia de resolución
+
+```
+### 👁️ Mecanismo de Control Actual & Evolución hacia RPA Contextual
+
+Actualmente, el bot opera bajo un esquema de **ejecución por coordenadas fijas (Blind Automation)** con supervisión humana asistida (*Human-in-the-Loop*):
+
+* **Sincronización por Delays Controlados:** Se establecieron pausas deliberadas de `0.5s` a `1.8s` entre acciones clave. Esto genera una ventana de tiempo estratégica para mitigar la falta de respuesta del ERP, permitiendo al operador intervenir manualmente (ej. abortar con la tecla `Esc`) si la interfaz sufre un congelamiento momentáneo.
+* **Desfase de Estado (Console vs. GUI):** Dado que la terminal imprime el comando planificado *antes* de enviarlo a la interfaz gráfica, el motor carece de un bucle de realimentación para confirmar si el foco de pantalla se encuentra efectivamente en el campo correcto.
+
+#### 🚀 Roadmap Técnico de Mejora (Context-Aware RPA):
+Para evolucionar de una automatización asistida a una ejecución autónoma y resiliente, se contemplan las siguientes vías de refactorización:
+1. **Verificación de Estado por Visión Computacional (OpenCV / PyScreeze):** Implementar reconocimiento de patrones visuales para confirmar la presencia de botones ("Agregar", "Aceptar") e íconos de carga antes de enviar clics.
+2. **Inspección Dinámica de Elementos (Win32 API / Pywinauto):** Sustituir coordenadas absolutas por la lectura directa de *handles* de ventanas de Windows (`HWND`), detectando cambios de título o controles habilitados.
+3. **Manejo de Excepciones por Timeout:** Reemplazar los `sleep()` fijos por un patrón *Wait Until Visible* con tiempo de espera máximo.
+---
+
+## 🔄 Flujo Operativo Mapeado
+
+```mermaid
+graph TD
+    A[Inicio: liquidacion.xlsx] --> B[validar_excel.py: Sanity Check]
+    B -->|Éxito| C[ffill & GroupBy por Cód. Inmueble]
+    C --> D[Enfocar Inmosoft con win32gui]
+    
+    subgraph Fase 1: Carga de Conceptos
+        D --> E[Buscador Rápido: Cód. Inmueble]
+        E --> F[Programar Conceptos para Inquilino]
+        F --> G[Inyección de Concepto y Monto Sanitizado]
+        G --> H[Aplicar Cambios & Reset con Esc]
+    end
+
+    subgraph Fase 2: Emisión y Descarga de PDF
+        H --> I[Navegación: Útiles -> Descargar cupón como PDF]
+        I --> J[Inyección de Ruta Absoluta en Windows Save As]
+        J --> K[Cierre Limpio de Popups & Retorno a Dashboard]
+    end
+    
+    K --> L[Fin: Cupones Exportados en CUPONES_DESCARGADOS]
+
+```
+
+---
+
+## 💻 Código Destacado: Motor de Sanitización y Manejo de Portapapeles
+
+### Sanitización de Montos para ERP 32-bit:
+
+```python
+def formatear_monto_inmosoft(val):
+    if pd.isna(val):
+        return "0,00"
+    s_val = str(val).replace('$', '').strip()
+    if ',' in s_val and '.' in s_val:
+        s_val = s_val.replace('.', '')
+    s_val = s_val.replace('.', ',')
+    try:
+        val_float = float(s_val.replace(',', '.'))
+        return f"{val_float:.2f}".replace('.', ',')
+    except ValueError:
+        return s_val
+
+```
+
+### Inyección Atómica de Rutas Absolutas (Evitando diálogo de sobreescritura):
+
+```python
+# Inyección directa por portapapeles en la API de Windows
+pyperclip.copy(ruta_completa_pdf)
+pyautogui.hotkey('ctrl', 'a')
+time.sleep(0.2)
+pyautogui.hotkey('ctrl', 'v')
+time.sleep(0.4)
+pyautogui.press('enter')  # Confirma guardado
+
+```
+
+---
+
+## 📋 Pre-requisitos e Instalación
+
+1. **Entorno Python 3.8+** (Windows 10/11 x64).
+2. **Instalación de Dependencias:**
+```bash
+pip install pandas openpyxl pyautogui pyperclip pywin32
+
+```
+
+
+3. **Ejecución de Pre-flight Check:**
+```bash
+python validar_excel.py
+
+```
+
+
+4. **Calibración de Pantalla (Solo si cambia de monitor o resolución):**
+```bash
+python calibrar_coordenadas.py
+
+```
+
+
+5. **Ejecución de Automatismos:**
+```bash
+python inmosoft_carga_conceptos.py
+python descargar_cupones_estable.py
+
+```
+
+
+
+---
+
+## 👤 Autor
+
+**Teo Quimey Waldemar Londero**
+
+*Analista de Ciberseguridad & Desarrollador RPA*
+
+* [GitHub Profile](https://www.google.com/search?q=https://github.com/tlondero-sec)
+* [Portfolio General](https://github.com/tlondero-sec/portfolio)
+
+```
+
+---
+
+### 💡 Pasos para subirlo hoy mismo a GitHub:
+
+1. Creás el repositorio `inmosoft-rpa-automation` en tu cuenta de GitHub (`tlondero-sec`).
+2. Subís los scripts Python que tenés:
+   * `calibrar_coordenadas.py`
+   * `validar_excel.py`
+   * `inmosoft_carga_conceptos.py`
+   * `descargar_cupones_estable.py`
+3. Subís este `README.md`.
+4. ¡Listo! Ya tenés tu segundo proyecto oficial (junto a `SOC-LAB`) perfectamente documentado a nivel de ingeniería.
+
+```
