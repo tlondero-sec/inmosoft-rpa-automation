@@ -193,7 +193,13 @@ python inmosoft_carga_conceptos.py
 python descargar_cupones_estable.py
 
 ```
+### 📊 Estructura del Archivo de Entrada (`liquidacion_template.xlsx`)
 
+El archivo de Excel debe respetar la estructura de bloques agrupados por unidad funcional. No es necesario repetir el código de inmueble en cada fila; el bot aplica *forward fill* automáticamente.
+
+![Plantilla de Excel](./img/00-template-excel.png)
+
+> **Nota sobre el formato:** Asegurate de mantener los encabezados exactos `Cód. Inmueble`, `Concepto` y `Monto`.
 
 
 ---
