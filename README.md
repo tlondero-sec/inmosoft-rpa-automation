@@ -146,6 +146,25 @@ pyautogui.press('enter')  # Confirma guardado
 
 ## 📋 Pre-requisitos e Instalación
 
+> [!IMPORTANT]
+> **🔴 REQUISITO OBLIGATORIO DE ENTORNO: POWERSHELL 7+ (ADMINISTRADOR)**
+> 
+> Debido a la interacción directa con las APIs de Windows (`win32gui` / `win32con`) y a la simulación de eventos de teclado/mouse a bajo nivel, **los scripts NO funcionarán correctamente en la consola clásica de Windows Command Prompt (cmd.exe) ni en la versión legacy de Windows PowerShell 5.1**.
+> 
+> * **Motor Requerido:** **PowerShell 7.x+** (probado y validado en **PowerShell 7.4+ / 7.6.x Core**).
+> * **Elevación de Privilegios:** La terminal DEBE ejecutarse obligatoriamente con el rol de **Administrador** (`Run as Administrator`). De lo contrario, las llamadas a `SetForegroundWindow` e inyección de portapapeles sobre la ventana de Inmosoft serán bloqueadas por las políticas de seguridad (UAC / UIPI) de Windows.
+
+# 1. Abrir PowerShell 7 (pwsh.exe) como Administrador
+# 2. Navegar a la carpeta del proyecto
+cd "C:\RPA\inmosoft-rpa-automation"
+
+# 3. Validar versión del entorno (debe ser 7.x o superior)
+$PSVersionTable.PSVersion
+
+# 4. Ejecutar el validador y los bots
+python validar_excel.py
+python inmosoft_carga_conceptos.py
+
 1. **Entorno Python 3.8+** (Windows 10/11 x64).
 2. **Instalación de Dependencias:**
 ```bash
