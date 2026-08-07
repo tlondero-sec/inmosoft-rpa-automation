@@ -16,6 +16,16 @@ El desarrollo resuelve de forma nativa cuellos de botella de la API de Windows, 
 
 ## 🛠️ Desafíos Técnicos & Soluciones de Ingeniería
 
+### 🐛 Evidencia de Bug Legacy: Desbordamiento de Búfer (-99999999,00)
+
+El motor gráfico de Inmosoft (32-bit) sufre una falla de parseo numérico cuando se envían caracteres o formatos no sanitizados en la caja de texto `Monto`. Esto causa un integer overflow asignando el valor límite por defecto `-99999999,00`.
+
+| 1. Entrada de Texto | 2. Integer Overflow resultante |
+| :---: | :---: |
+| ![Monto Ingresado](./img/01-buffer-overflow-input.png) | ![Resultado Corrupto](./img/02-buffer-overflow-result.png) |
+| *Intento de carga de monto.* | *Resultado desbordado en la GUI (`-99999999,00`).* |
+
+> 🛡️ **Solución implementada en el Bot:** La función `formatear_monto_inmosoft()` intercepta el dato del Excel y fuerza la conversión limpia a coma decimal de precisión fija previa a la Inyección por Portapapeles, previniendo la corrupción de montos en el ERP.
 ### 1. Desbordamiento de Búfer en Cargas Numéricas (Error -99999999,00)
 * **Problema:** Inmosoft es una aplicación legacy de 32 bits que no procesa puntos decimales ni separadores de miles al recibir texto pegado o tiapeado. Al ingresar valores como `1.000,00`, el sistema sufre un integer overflow asignando `-99999999,00`.
 * **Solución:** Se diseñó una función de sanitización estricta (`formatear_monto_inmosoft`) que limpia símbolos monetarios (`$`), elimina puntos separadores de miles y transforma obligatoriamente cualquier entrada numérica al formato con coma decimal de precisión fija (`1000,00`).
