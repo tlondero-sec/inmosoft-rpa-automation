@@ -52,14 +52,14 @@ graph TD
     A[liquidacion_template.xlsx] --> B[Agrupar por Cód. Inmueble con ffill]
     B --> C[Enfocar ventana de Inmosoft]
     
-    subgraph Carga de Conceptos (Carga Inmosoft.py)
+    subgraph SG1 ["Carga de Conceptos (Carga Inmosoft.py)"]
         C --> D[Buscar código de inmueble]
         D --> E[Abrir conceptos de inquilino]
         E --> F[Pegar concepto y monto formateado]
         F --> G[Aplicar cambios]
     end
 
-    subgraph Descarga de Cupones PDF (cupones script.py)
+    subgraph SG2 ["Descarga de Cupones PDF (cupones script.py)"]
         G --> H[Navegar a Útiles -> Descargar PDF]
         H --> I[Pegar ruta del archivo en Save As]
         I --> J[Cerrar emergentes con Esc]
