@@ -129,10 +129,6 @@ El motor gráfico de Inmosoft (32-bit) presenta una falla de análisis numérico
 **2. Error de integer overflow resultante:**
 ![Error en el ERP](02-buffer-overflow-result.png)
 
-| Monto cargado | Error en el ERP |
-| --- | --- |
-|  |  |
-
 La lógica en `Carga Inmosoft.py` soluciona esto limpiando el string antes de pegarlo:
 
 ```python
@@ -168,18 +164,3 @@ Para pasar de una ejecución asistida por coordenadas a una automatización aut�
 1. **Inmosoft se cae solo (fugas de memoria):** Después de 20 o 30 propiedades seguidas, el ERP se cierra de la nada. Hay que volver a abrirlo y reanudar la ejecución desde la fila donde quedó.
 2. **Sobreescritura de PDFs:** Si Windows tarda en renderizar el cuadro de "Guardar como", el script envía el `Enter` antes de terminar de pegar el nombre nuevo y lo guarda con el nombre genérico.
 3. **Salteo de unidades:** Rara vez se saltea alguna propiedad en el buscador. Pasa cuando el ERP tarda en filtrar la lista y la secuencia tira el clic al menú antes de que termine de cargar.
-
----
-
-## Autor
-
-**Teo Quimey Waldemar Londero**
-
-*Analista de Ciberseguridad & Desarrollador RPA*
-
-* [GitHub Profile](https://www.google.com/search?q=https://github.com/tlondero-sec)
-* [Portfolio General](https://github.com/tlondero-sec/portfolio)
-
-```
-
-```
