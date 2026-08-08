@@ -54,9 +54,17 @@ inmosoft-rpa-automation/
 
 El archivo de Excel debe seguir la estructura de bloques agrupados por unidad funcional. No es necesario repetir el código de inmueble en cada fila; la función `ffill()` autocompleta la clave hacia abajo de forma automática.
 
-<p align="center">
-  <img src="./00-template-excel.png" alt="Plantilla de Excel" width="100%" />
-</p>
+| Cód. Inmueble | Descripcion Inmueble | Concepto | Monto | Complejo |
+| :--- | :--- | :--- | :--- | :--- |
+| **DE15** | EA1D | IMPUESTO INMOBILIARIO MUNICIPAL | 1000,00 | |
+| | | ABONO ASCENSOR | 1000,00 | |
+| | | MANTENIMIENTO INGRESO EDIFICIO | 1000,00 | |
+| **DE16** | EA2D | IMPUESTO INMOBILIARIO MUNICIPAL | 1000,00 | |
+| | | ABONO ASCENSOR | 1000,00 | |
+| | | Seguro Contra incendio Edificio Entero | 1000,00 | |
+| **DE17** | EA4C | IMPUESTO INMOBILIARIO MUNICIPAL | 1000,00 | |
+| | | ABONO ASCENSOR | 1000,00 | |
+| | | LIMPIEZA | 1000,00 | |
 
 > **Nota sobre el formato:** Asegúrate de mantener los encabezados exactos `Cód. Inmueble`, `Concepto` y `Monto`.
 
