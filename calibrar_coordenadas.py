@@ -51,19 +51,20 @@ def calibrar():
     opcion = input("Ingresá opción (1, 2 o 3): ").strip()
     coordenadas = cargar_coordenadas_existentes()
 
-    if opcion == "1":
-        print("\n--- Calibrando Puntos de Carga de Conceptos ---")
-        ejecutar_mapeo(PUNTOS_CARGA, coordenadas)
-    elif opcion == "2":
-        print("\n--- Calibrando Puntos de Descarga de Cupones ---")
-        ejecutar_mapeo(PUNTOS_CUPONES, coordenadas)
-    elif opcion == "3":
-        print("\n--- Calibración Completa ---")
-        ejecutar_mapeo(PUNTOS_CARGA, coordenadas)
-        ejecutar_mapeo(PUNTOS_CUPONES, coordenadas)
-    else:
-        print("❌ Opción no válida. Cancelando.")
-        return
+    match opcion:
+        case "1":
+            print("\n--- Calibrando Puntos de Carga de Conceptos ---")
+            ejecutar_mapeo(PUNTOS_CARGA, coordenadas)
+        case "2":
+            print("\n--- Calibrando Puntos de Descarga de Cupones ---")
+            ejecutar_mapeo(PUNTOS_CUPONES, coordenadas)
+        case "3":
+            print("\n--- Calibración Completa ---")
+            ejecutar_mapeo(PUNTOS_CARGA, coordenadas)
+            ejecutar_mapeo(PUNTOS_CUPONES, coordenadas)
+        case _:
+            print("❌ Opción no válida. Cancelando.")
+            return
 
     # Guardar en JSON consolidado
     with open(ARCHIVO_SALIDA, "w", encoding="utf-8") as f:
