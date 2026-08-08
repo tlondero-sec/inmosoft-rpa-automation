@@ -14,54 +14,7 @@ El desarrollo resuelve de forma nativa cuellos de botella de la API de Windows, 
 
 ---
 
-## 🛠️ Desafíos Técnicos & Soluciones de Ingeniería
 
-### 🐛 Evidencia de Bug Legacy: Desbordamiento de Búfer (-99999999,00)
-
-El motor gráfico de Inmosoft (32-bit) sufre una falla de parseo numérico cuando se envían caracteres o formatos no sanitizados en la caja de texto `Monto`. Esto causa un integer overflow asignando el valor límite por defecto `-99999999,00`.
-
-| 1. Entrada de Texto | 2. Integer Overflow resultante |
-| :---: | :---: |
-| ![Monto Ingresado](./img/01-buffer-overflow-input.png) | ![Resultado Corrupto](./img/02-buffer-overflow-result.png) |
-| *Intento de carga de monto.* | *Resultado desbordado en la GUI (`-99999999,00`).* |
-
-> 🛡️ **Solución implementada en el Bot:** La función `formatear_monto_inmosoft()` intercepta el dato del Excel y fuerza la conversión limpia a coma decimal de precisión fija previa a la Inyección por Portapapeles, previniendo la corrupción de montos en el ERP.
-### 1. Desbordamiento de Búfer en Cargas Numéricas (Error -99999999,00)
-* **Problema:** Inmosoft es una aplicación legacy de 32 bits que no procesa puntos decimales ni separadores de miles al recibir texto pegado o tiapeado. Al ingresar valores como `1.000,00`, el sistema sufre un integer overflow asignando `-99999999,00`.
-* **Solución:** Se diseñó una función de sanitización estricta (`formatear_monto_inmosoft`) que limpia símbolos monetarios (`$`), elimina puntos separadores de miles y transforma obligatoriamente cualquier entrada numérica al formato con coma decimal de precisión fija (`1000,00`).
-
-### 2. Saturación de Interrupciones GUI (Cuelgues WOW64)
-* **Problema:** La simulación acelerada de pulsaciones de teclado mediante librerías de automatización satura la cola de eventos de Windows en la capa de compatibilidad WOW64 (32-bit sobre 64-bit), colapsando el software.
-* **Solución:** Se implementó inyección atómica por portapapeles de Windows (`pyperclip` + `Ctrl+V`) acompañada de delays estratégicos (`pyautogui.PAUSE = 0.4s` a `0.5s`) y esperas adaptativas de lectura en base de datos.
-
-### 3. Agrupamiento de Estructuras No Relacionales en Excel
-* **Problema:** La planilla de liquidación contable agrupa los conceptos por bloque pero solo declara el `Cód. Inmueble` en la primera fila de la unidad funcional.
-* **Solución:** Uso del algoritmo de propagación `df['Cód. Inmueble'].ffill()` de `pandas` para autocompletar la clave foránea hacia abajo, agrupando dinámicamente con `.groupby()` sin alterar el orden original.
-
-### 4. Sobreescritura de Archivos en Descarga Masiva
-* **Problema:** Inmosoft exporta reportes PDF con nombres estáticos por propietario. Cuando múltiples unidades pertenecen al mismo titular, el archivo local se sobreescribe.
-* **Solución:** Intercepción de la ventana *"Guardar como"* de Windows (`win32gui`) e inyección directa de la ruta absoluta con nombrado único en tiempo real (`C:\...\CUPONES_DESCARGADOS\Cupon_CODIGO.pdf`).
-
-> [!WARNING]
-> **⚠️ ESTADO DEL PROYECTO & DISCLAIMER DE USO EN PRODUCCIÓN**
-> 
-> Este script fue desarrollado como una **Prueba de Concepto (PoC) / Automatización Ad-Hoc** para operar sobre una interfaz GUI legacy no pensada para automatización. Debido a la naturaleza no determinista de la simulación de eventos de mouse/teclado y la inestabilidad propia del software base, el repositorio se comparte exclusivamente con fines educativos y de portafolio. **No se recomienda su ejecución desatendida en entornos de producción.**
-
----
-
-### 🐛 Known Issues & Deuda Técnica (Bugs Conocidos)
-
-Actualmente existen comportamientos anómalos detectados en el pipeline que se encuentran bajo investigación para futuras versiones:
-
-1. **Colisión y Sobreescritura Sporádica de Cupones PDF:**
-   * **Comportamiento:** A pesar del renombrado dinámico por ruta absoluta en la ventana *"Guardar como"*, si la API de Windows demora en renderizar el cuadro de diálogo por sobrecarga de I/O, el bot envía la secuencia de guardado antes de limpiar el campo de texto, provocando la sobreescritura con el nombre estático por defecto del ERP.
-2. **Crashes Aleatorios de Inmosoft (Memory Leaks / Fault Tolerant):**
-   * **Comportamiento:** El motor interno de Inmosoft (32 bits) presenta fugas de memoria al procesar ciclos largos de lectura/escritura de contratos. Tras 20-30 iteraciones seguidas, la aplicación lanza una excepción no controlada (`Access Violation / Stopped Working`) cerrándose de forma imprevista.
-3. **Salteo Inexplorado de Unidades Funcionales (Omission Anomaly):**
-   * **Comportamiento:** Durante la lectura e inyección de `liquidacion.xlsx`, en ejecuciones extensas el flujo saltea ocasionalmente 1 o 2 unidades consecutivas sin arrojar error sintáctico en consola. Se sospecha una desincronización de tiempos (*race condition*) entre el foco del cuadro de búsqueda y la respuesta de la base de datos local.
-
-> 🛠️ **Contribuciones / Workarounds:** Si tenés sugerencias para mitigar la condición de carrera vía `win32api` o mediante *hooks* directos a la ventana de Windows, los Pull Requests son más que bienvenidos.
----
 
 ## 🏗️ Arquitectura de Scripts
 
@@ -85,12 +38,6 @@ Actualmente, el bot opera bajo un esquema de **ejecución por coordenadas fijas 
 * **Sincronización por Delays Controlados:** Se establecieron pausas deliberadas de `0.5s` a `1.8s` entre acciones clave. Esto genera una ventana de tiempo estratégica para mitigar la falta de respuesta del ERP, permitiendo al operador intervenir manualmente (ej. abortar con la tecla `Esc`) si la interfaz sufre un congelamiento momentáneo.
 * **Desfase de Estado (Console vs. GUI):** Dado que la terminal imprime el comando planificado *antes* de enviarlo a la interfaz gráfica, el motor carece de un bucle de realimentación para confirmar si el foco de pantalla se encuentra efectivamente en el campo correcto.
 
-#### 🚀 Roadmap Técnico de Mejora (Context-Aware RPA):
-Para evolucionar de una automatización asistida a una ejecución autónoma y resiliente, se contemplan las siguientes vías de refactorización:
-1. **Verificación de Estado por Visión Computacional (OpenCV / PyScreeze):** Implementar reconocimiento de patrones visuales para confirmar la presencia de botones ("Agregar", "Aceptar") e íconos de carga antes de enviar clics.
-2. **Inspección Dinámica de Elementos (Win32 API / Pywinauto):** Sustituir coordenadas absolutas por la lectura directa de *handles* de ventanas de Windows (`HWND`), detectando cambios de título o controles habilitados.
-3. **Manejo de Excepciones por Timeout:** Reemplazar los `sleep()` fijos por un patrón *Wait Until Visible* con tiempo de espera máximo.
----
 
 ## 🔄 Flujo Operativo Mapeado
 
@@ -213,6 +160,61 @@ El archivo de Excel debe respetar la estructura de bloques agrupados por unidad 
 
 
 ---
+#### 🚀 Roadmap Técnico de Mejora (Context-Aware RPA):
+Para evolucionar de una automatización asistida a una ejecución autónoma y resiliente, se contemplan las siguientes vías de refactorización:
+1. **Verificación de Estado por Visión Computacional (OpenCV / PyScreeze):** Implementar reconocimiento de patrones visuales para confirmar la presencia de botones ("Agregar", "Aceptar") e íconos de carga antes de enviar clics.
+2. **Inspección Dinámica de Elementos (Win32 API / Pywinauto):** Sustituir coordenadas absolutas por la lectura directa de *handles* de ventanas de Windows (`HWND`), detectando cambios de título o controles habilitados.
+3. **Manejo de Excepciones por Timeout:** Reemplazar los `sleep()` fijos por un patrón *Wait Until Visible* con tiempo de espera máximo.
+---
+
+## 🛠️ Desafíos Técnicos & Soluciones de Ingeniería
+
+### 🐛 Evidencia de Bug Legacy: Desbordamiento de Búfer (-99999999,00)
+
+El motor gráfico de Inmosoft (32-bit) sufre una falla de parseo numérico cuando se envían caracteres o formatos no sanitizados en la caja de texto `Monto`. Esto causa un integer overflow asignando el valor límite por defecto `-99999999,00`.
+
+| 1. Entrada de Texto | 2. Integer Overflow resultante |
+| :---: | :---: |
+| ![Monto Ingresado](./img/01-buffer-overflow-input.png) | ![Resultado Corrupto](./img/02-buffer-overflow-result.png) |
+| *Intento de carga de monto.* | *Resultado desbordado en la GUI (`-99999999,00`).* |
+
+> 🛡️ **Solución implementada en el Bot:** La función `formatear_monto_inmosoft()` intercepta el dato del Excel y fuerza la conversión limpia a coma decimal de precisión fija previa a la Inyección por Portapapeles, previniendo la corrupción de montos en el ERP.
+### 1. Desbordamiento de Búfer en Cargas Numéricas (Error -99999999,00)
+* **Problema:** Inmosoft es una aplicación legacy de 32 bits que no procesa puntos decimales ni separadores de miles al recibir texto pegado o tiapeado. Al ingresar valores como `1.000,00`, el sistema sufre un integer overflow asignando `-99999999,00`.
+* **Solución:** Se diseñó una función de sanitización estricta (`formatear_monto_inmosoft`) que limpia símbolos monetarios (`$`), elimina puntos separadores de miles y transforma obligatoriamente cualquier entrada numérica al formato con coma decimal de precisión fija (`1000,00`).
+
+### 2. Saturación de Interrupciones GUI (Cuelgues WOW64)
+* **Problema:** La simulación acelerada de pulsaciones de teclado mediante librerías de automatización satura la cola de eventos de Windows en la capa de compatibilidad WOW64 (32-bit sobre 64-bit), colapsando el software.
+* **Solución:** Se implementó inyección atómica por portapapeles de Windows (`pyperclip` + `Ctrl+V`) acompañada de delays estratégicos (`pyautogui.PAUSE = 0.4s` a `0.5s`) y esperas adaptativas de lectura en base de datos.
+
+### 3. Agrupamiento de Estructuras No Relacionales en Excel
+* **Problema:** La planilla de liquidación contable agrupa los conceptos por bloque pero solo declara el `Cód. Inmueble` en la primera fila de la unidad funcional.
+* **Solución:** Uso del algoritmo de propagación `df['Cód. Inmueble'].ffill()` de `pandas` para autocompletar la clave foránea hacia abajo, agrupando dinámicamente con `.groupby()` sin alterar el orden original.
+
+### 4. Sobreescritura de Archivos en Descarga Masiva
+* **Problema:** Inmosoft exporta reportes PDF con nombres estáticos por propietario. Cuando múltiples unidades pertenecen al mismo titular, el archivo local se sobreescribe.
+* **Solución:** Intercepción de la ventana *"Guardar como"* de Windows (`win32gui`) e inyección directa de la ruta absoluta con nombrado único en tiempo real (`C:\...\CUPONES_DESCARGADOS\Cupon_CODIGO.pdf`).
+
+> [!WARNING]
+> **⚠️ ESTADO DEL PROYECTO & DISCLAIMER DE USO EN PRODUCCIÓN**
+> 
+> Este script fue desarrollado como una **Prueba de Concepto (PoC) / Automatización Ad-Hoc** para operar sobre una interfaz GUI legacy no pensada para automatización. Debido a la naturaleza no determinista de la simulación de eventos de mouse/teclado y la inestabilidad propia del software base, el repositorio se comparte exclusivamente con fines educativos y de portafolio. **No se recomienda su ejecución desatendida en entornos de producción.**
+
+---
+
+### 🐛 Known Issues & Deuda Técnica (Bugs Conocidos)
+
+Actualmente existen comportamientos anómalos detectados en el pipeline que se encuentran bajo investigación para futuras versiones:
+
+1. **Colisión y Sobreescritura Sporádica de Cupones PDF:**
+   * **Comportamiento:** A pesar del renombrado dinámico por ruta absoluta en la ventana *"Guardar como"*, si la API de Windows demora en renderizar el cuadro de diálogo por sobrecarga de I/O, el bot envía la secuencia de guardado antes de limpiar el campo de texto, provocando la sobreescritura con el nombre estático por defecto del ERP.
+2. **Crashes Aleatorios de Inmosoft (Memory Leaks / Fault Tolerant):**
+   * **Comportamiento:** El motor interno de Inmosoft (32 bits) presenta fugas de memoria al procesar ciclos largos de lectura/escritura de contratos. Tras 20-30 iteraciones seguidas, la aplicación lanza una excepción no controlada (`Access Violation / Stopped Working`) cerrándose de forma imprevista.
+3. **Salteo Inexplorado de Unidades Funcionales (Omission Anomaly):**
+   * **Comportamiento:** Durante la lectura e inyección de `liquidacion.xlsx`, en ejecuciones extensas el flujo saltea ocasionalmente 1 o 2 unidades consecutivas sin arrojar error sintáctico en consola. Se sospecha una desincronización de tiempos (*race condition*) entre el foco del cuadro de búsqueda y la respuesta de la base de datos local.
+
+> 🛠️ **Contribuciones / Workarounds:** Si tenés sugerencias para mitigar la condición de carrera vía `win32api` o mediante *hooks* directos a la ventana de Windows, los Pull Requests son más que bienvenidos.
+---
 
 ## 👤 Autor
 
@@ -222,8 +224,6 @@ El archivo de Excel debe respetar la estructura de bloques agrupados por unidad 
 
 * [GitHub Profile](https://www.google.com/search?q=https://github.com/tlondero-sec)
 * [Portfolio General](https://github.com/tlondero-sec/portfolio)
-
-```
 
 ---
 
