@@ -6,11 +6,17 @@
 ![OS](https://img.shields.io/badge/Platform-Windows%20x64-0078D6?style=for-the-badge&logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-## 📌 Resumen del Proyecto
+📌 Resumen del Proyecto
 
-Solución de **Automatización de Procesos Robóticos (RPA)** desarrollada en Python para optimizar la carga contable masiva de liquidaciones y la emisión/descarga directa de cupones de pago en PDF dentro de la plataforma **Inmosoft** (sistema empresarial ERP legacy de 32 bits).
+Script en Python para automatizar la carga de liquidaciones y la descarga de cupones PDF en el ERP Inmosoft (Windows 32-bit).
 
-El desarrollo resuelve de forma nativa cuellos de botella de la API de Windows, desbordamientos de búfer en cajas de texto de sistemas de 32 bits y saturación de memoria mediante la inyección directa por portapapeles y calibración por coordenadas absolutas.
+Estrategias y comportamiento actual:
+
+    Inyección por portapapeles (Clipboard): Agiliza el pegado de texto en cajas de entrada (reduce errores de tipeo, aunque el ERP mantiene cierres inesperados por memory leaks en ejecuciones largas).
+
+    Sanitización de montos: Previene el desbordamiento de búfer (-99999999,00) forzando el formato con coma decimal de precisión fija.
+
+    Calibración por coordenadas: Mapea la interfaz gráfica mediante un JSON unificado de coordenadas absolutas para interactuar con la GUI sin depender de controles internos.
 
 ---
 
