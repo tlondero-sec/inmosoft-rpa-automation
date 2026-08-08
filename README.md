@@ -227,15 +227,5 @@ El archivo de Excel debe respetar la estructura de bloques agrupados por unidad 
 
 ---
 
-### 💡 Pasos para subirlo hoy mismo a GitHub:
-
-1. Creás el repositorio `inmosoft-rpa-automation` en tu cuenta de GitHub (`tlondero-sec`).
-2. Subís los scripts Python que tenés:
-   * `calibrar_coordenadas.py`
-   * `validar_excel.py`
-   * `inmosoft_carga_conceptos.py`
-   * `descargar_cupones_estable.py`
-3. Subís este `README.md`.
-4. ¡Listo! Ya tenés tu segundo proyecto oficial (junto a `SOC-LAB`) perfectamente documentado a nivel de ingeniería.
 
 ```
