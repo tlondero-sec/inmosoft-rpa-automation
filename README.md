@@ -123,6 +123,12 @@ El archivo de Excel debe seguir la estructura de bloques agrupados por unidad fu
 
 El motor gráfico de Inmosoft (32-bit) presenta una falla de análisis numérico cuando se envían caracteres o formatos no sanitizados en la caja de texto `Monto`. Esto provoca un integer overflow asignando el valor límite por defecto `-99999999,00`.
 
+**1. Intento de carga de monto:**
+![Monto cargado](01-buffer-overflow-input.png)
+
+**2. Error de integer overflow resultante:**
+![Error en el ERP](02-buffer-overflow-result.png)
+
 | Monto cargado | Error en el ERP |
 | --- | --- |
 |  |  |
