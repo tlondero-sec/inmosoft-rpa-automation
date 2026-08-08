@@ -37,12 +37,13 @@ inmosoft-rpa-automation/
 └── ⚙️ coordenadas_monitor_teo.json # Mapeo de coordenadas en JSON para independencia de resolución
 
 ```
-### 👁️ Mecanismo de Control Actual & Evolución hacia RPA Contextual
+Control Actual (Supervisión Manual Asistida)
 
-Actualmente, el bot opera bajo un esquema de **ejecución por coordenadas fijas (Blind Automation)** con supervisión humana asistida (*Human-in-the-Loop*):
+👁️ El bot opera a ciegas mediante coordenadas fijas (Blind Automation), por lo que requiere supervisión constante por parte del operador:
 
-* **Sincronización por Delays Controlados:** Se establecieron pausas deliberadas de `0.5s` a `1.8s` entre acciones clave. Esto genera una ventana de tiempo estratégica para mitigar la falta de respuesta del ERP, permitiendo al operador intervenir manualmente (ej. abortar con la tecla `Esc`) si la interfaz sufre un congelamiento momentáneo.
-* **Desfase de Estado (Console vs. GUI):** Dado que la terminal imprime el comando planificado *antes* de enviarlo a la interfaz gráfica, el motor carece de un bucle de realimentación para confirmar si el foco de pantalla se encuentra efectivamente en el campo correcto.
+    Pausas estratégicas (0.5s a 1.8s): Los delays entre acciones no garantizan la estabilidad del ERP; están puestos adrede para darle tiempo al software de procesar y, principalmente, para darle al operador una ventana de reacción donde presionar Esc o frenar la ejecución si la GUI se congela o descoordina.
+
+    Desfase Terminal vs. GUI: La consola imprime la acción programada antes de enviarla. Si el programa se frena o pierde el foco, la terminal seguirá mostrando pasos que no están ocurriendo en pantalla, ya que el script no valida el estado real de las ventanas.
 
 
 ## 🔄 Flujo Operativo Mapeado
