@@ -1,22 +1,16 @@
-
-
-https://github.com/user-attachments/assets/1f994c49-d9ed-439f-88a0-aa8b8dfa3043
-
-
-
-
 # Inmosoft RPA — Carga de Liquidaciones y Descarga de Cupones
 
-![Python](https://img.shields.io/badge/Language-Python%203.x-blue?style=for-the-badge&logo=python)
-![OS](https://img.shields.io/badge/Platform-Windows%20x64-0078D6?style=for-the-badge&logo=windows)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Language](https://img.shields.io/badge/LANGUAGE-PYTHON_3.X-blue) ![Platform](https://img.shields.io/badge/PLATFORM-WINDOWS_X64-blue) ![License](https://img.shields.io/badge/LICENSE-MIT-green)
 
 Conjunto de scripts en Python para automatizar la carga de conceptos contables y la descarga de cupones PDF en el ERP Inmosoft (Windows 32-bit).
+
+## 🎥 Demostración
+https://github.com/user-attachments/assets/1f994c49-d9ed-439f-88a0-aa8b8dfa3043
+> *Ejecución del script experimental inyectando las liquidaciones directamente en los campos del ERP.*
 
 ---
 
 ## 1. Objetivo del Proyecto
-
 * **Inyección por portapapeles (`Clipboard`):** Pega los textos directamente en los campos del ERP mediante la API del portapapeles en lugar de simular tipeo tecla por tecla. Agiliza la entrada y evita errores de caracteres.
 * **Sanitización de montos:** Fuerza la conversión de los números al formato estricto con coma decimal (`1000,00`), evitando que la interfaz de Inmosoft rompa los valores al recibir puntos o formatos no parseados.
 * **Mapeo por coordenadas:** Utiliza un archivo JSON de coordenadas absolutas (`X, Y`) para simular los clics sobre la interfaz gráfica sin depender de controles internos.
