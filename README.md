@@ -1,4 +1,10 @@
 
+
+https://github.com/user-attachments/assets/1f994c49-d9ed-439f-88a0-aa8b8dfa3043
+
+
+
+
 # Inmosoft RPA — Carga de Liquidaciones y Descarga de Cupones
 
 ![Python](https://img.shields.io/badge/Language-Python%203.x-blue?style=for-the-badge&logo=python)
